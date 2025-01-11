@@ -6,3 +6,4 @@ npx tailwindcss init
 npm i -D daisyui@latest
 npm i axios zustand
 npm i lucide-react
+npm install browser-image-compression

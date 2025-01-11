@@ -1,25 +1,63 @@
-// import React from 'react'
+import React, { useState } from "react";
 import { Camera, User, Mail } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
-import { useState } from "react";
+import toast from "react-hot-toast";
+
 const Profile = () => {
-
   const { authUser, isUpdatingProfile, updateProfile } = useAuthStore();
+  const [formData, setFormData] = useState({
+    fullname: authUser?.fullname || "",
+    email: authUser?.email || "",
+  });
   const [selectedImage, setSelectedImage] = useState(null);
-  const handleImageUpload =
-    async (e) => {
-      const file = e.target.files[0];
-      if(!file) return;
 
-      const reader = new FileReader();
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-      reader.readAsDataURL(file);
-      reader.onload = async () => {
-        const base64Image = reader.result;
-        setSelectedImage(base64Image);
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size should not exceed 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const base64Image = reader.result;
+
+      if (!base64Image.startsWith("data:image")) {
+        toast.error("Please upload a valid image file.");
+        return;
+      }
+
+      setSelectedImage(base64Image);
+
+      try {
         await updateProfile({ profilePic: base64Image });
+      } catch (error) {
+        console.error("Error updating profile image:", error);
       }
     };
+  };
+
+  const handleSubmit = async () => {
+    try {
+      await updateProfile({
+        fullname: formData.fullname,
+        email: formData.email,
+        profilePic: selectedImage || authUser.profilePic,
+      });
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile");
+    }
+  };
+
   return (
     <div className="h-screen pt-20">
       <div className="max-w-2xl mx-auto p-4 py-8">
@@ -29,23 +67,18 @@ const Profile = () => {
             <p className="text-base-content/60">Update your profile</p>
           </div>
 
-
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
-              <img 
-              src={selectedImage || authUser.profilePic || "https://whatsondisneyplus.com/wp-content/uploads/2021/06/luca-avatar-WODP.png"}
-              alt="Profile Picture"
-              className="w-32 h-32 rounded-full object-cover bottom-4" />
-
+              <img
+                src={selectedImage || authUser.profilePic || "https://default-avatar.png"}
+                alt="Profile Picture"
+                className="w-32 h-32 rounded-full object-cover"
+              />
               <label
                 htmlFor="pic-upload"
-                className={`
-                absolute bottom-0 right-0
-                bg-base-content hover:scale-105
-                p-2 rounded-full cursor-pointer
-                transition-all duration-200
-                ${isUpdatingProfile ? "animate-pulse pointer-events-none" : ""}
-              `}
+                className={`absolute bottom-0 right-0 bg-base-content hover:scale-105 p-2 rounded-full cursor-pointer ${
+                  isUpdatingProfile ? "animate-pulse pointer-events-none" : ""
+                }`}
               >
                 <Camera className="w-5 h-5 text-base-200" />
                 <input
@@ -58,43 +91,50 @@ const Profile = () => {
                 />
               </label>
             </div>
-            <p className="text-sm text-zinc-400">
-              {isUpdatingProfile ? "Uploading..." : "Click the camera icon to update your photo"}
-            </p>
           </div>
+
           <div className="space-y-6">
             <div className="space-y-1.5">
-              <div className="text-sm text-zinc-400 flex items-center gap-2">
+              <label className="text-sm text-zinc-400 flex items-center gap-2">
                 <User className="w-4 h-4" />
                 Full Name
-              </div>
-              <p className="px-4 py-2.5 bg-base-200 rounded-lg border">{authUser?.fullname}</p>
+              </label>
+              <input
+                type="text"
+                name="fullname"
+                value={formData.fullname}
+                onChange={handleInputChange}
+                className="px-4 py-2.5 bg-base-200 rounded-lg border w-full"
+              />
             </div>
             <div className="space-y-1.5">
-              <div className="text-sm text-zinc-400 flex items-center gap-2">
+              <label className="text-sm text-zinc-400 flex items-center gap-2">
                 <Mail className="w-4 h-4" />
                 Email Address
-              </div>
-              <p className="px-4 py-2.5 bg-base-200 rounded-lg border">{authUser?.email}</p>
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="px-4 py-2.5 bg-base-200 rounded-lg border w-full"
+              />
             </div>
           </div>
-          <div className="mt-6 bg-base-300 rounded-xl p-6">
-            <h2 className="text-lg font-medium  mb-4">Account Information</h2>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between py-2 border-b border-zinc-700">
-                <span>Member Since</span>
-                <span>{authUser.createdAt?.split("T")[0]}</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span>Account Status</span>
-                <span className="text-green-500">Active</span>
-              </div>
-            </div>
-          </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={isUpdatingProfile}
+            className={`mt-6 w-full bg-primary text-white py-2.5 rounded-lg ${
+              isUpdatingProfile ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            {isUpdatingProfile ? "Updating..." : "Save Changes"}
+          </button>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Profile
+export default Profile;

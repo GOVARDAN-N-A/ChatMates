@@ -86,28 +86,79 @@ export const logout = (req, res) => {
   }
 };
 
+const uploadToCloudinary = async (profilePic) => {
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      const uploadResult = await cloudinary.uploader.upload(profilePic, {
+        folder: "ChatMates",
+        use_filename: true,
+        unique_filename: false,
+        timeout: 60000, // 1 minute timeout
+      });
+      return uploadResult;
+    } catch (cloudinaryError) {
+      console.error("Cloudinary upload failed, retrying...", cloudinaryError);
+      retries -= 1;
+      if (retries === 0) {
+        throw cloudinaryError; // If all retries fail, throw error
+      }
+    }
+  }
+};
+
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic } = req.body;
-    const userId = req.user._id;
+    const { fullname, email, profilePic } = req.body;
 
-    if (!profilePic) {
-      return res.status(400).json({ message: "Profile pic is required" });
+    // Fetch the existing user from the database
+    const existingUser = await User.findById(req.user.id);
+
+    if (!existingUser) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
+    let cloudinaryUrl = existingUser.profilePic;
+
+    // If a new profilePic is provided and it's different from the existing one, upload it
+    if (profilePic && profilePic !== existingUser.profilePic) {
+      try {
+        const uploadResult = await uploadToCloudinary(profilePic);
+        cloudinaryUrl = uploadResult.secure_url; // Use the uploaded image URL
+      } catch (cloudinaryError) {
+        console.error("Error uploading to Cloudinary:", cloudinaryError);
+        return res.status(500).json({
+          message: "Error uploading image to Cloudinary",
+          error: cloudinaryError.message,
+        });
+      }
+    }
+
+    // Update the user profile with the new information
     const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { profilePic: uploadResponse.secure_url },
+      req.user.id,
+      {
+        fullname,
+        email,
+        profilePic: cloudinaryUrl, // Updated or unchanged Cloudinary URL
+      },
       { new: true }
     );
 
-    res.status(200).json(updatedUser);
+    if (!updatedUser) {
+      return res.status(400).json({ message: "User update failed" });
+    }
+
+    res.status(200).json(updatedUser); // Return the updated user info
   } catch (error) {
-    console.log("error in update profile:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Error updating profile:", error);
+    res.status(500).json({
+      message: "Error updating profile",
+      error: error.message,
+    });
   }
 };
+
 
 export const checkAuth = (req, res) => {
   try {
