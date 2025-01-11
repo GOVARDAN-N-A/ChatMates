@@ -1,0 +1,8 @@
+npm i express mongoose dotenv jsonwebtoken bcryptjs cookie-parser cloudinary socket.io
+npm i nodemon -D 
+npm i react-router-dom react-hot-toast
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init
+npm i -D daisyui@latest
+npm i axios zustand
+npm i lucide-react
