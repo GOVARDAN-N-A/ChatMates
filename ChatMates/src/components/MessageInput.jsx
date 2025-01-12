@@ -15,12 +15,12 @@ const MessageInput = () => {
       toast.error("Please select an image file");
       return;
     }
-
+  
     const reader = new FileReader();
     reader.onloadend = () => {
-      setImagePreview(reader.result);
+      setImagePreview(reader.result);  
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(file);  
   };
 
   const removeImage = () => {
@@ -31,13 +31,13 @@ const MessageInput = () => {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
-
+  
     try {
       await sendMessage({
         text: text.trim(),
-        image: imagePreview,
+        image: imagePreview,  // Send the Base64 image
       });
-
+  
       // Clear form
       setText("");
       setImagePreview(null);

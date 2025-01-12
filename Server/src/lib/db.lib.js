@@ -5,7 +5,7 @@ mongoose.set('debug', true);
 export const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 30000
+      serverSelectionTimeoutMS: 50000
     //   useNewUrlParser: true,
     //   useUnifiedTopology: true,
     });
@@ -15,6 +15,7 @@ export const connectDB = async () => {
     console.error("MongoDB connection error:", error.message);
 
     throw error;
+    
   }
 
 
