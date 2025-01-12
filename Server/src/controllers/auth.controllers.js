@@ -5,9 +5,11 @@ import bcrypt from "bcryptjs";
 import cloudinary from "../lib/cloudinary.lib.js";
 
 export const signup = async (req, res) => {
-  const { fullName, email, password } = req.body;
+  const { fullname, email, password } = req.body;
+  console.log(" signup controller", req.body);
+  
   try {
-    if (!fullName || !email || !password) {
+    if (!fullname || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -23,7 +25,7 @@ export const signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = new User({
-      fullName,
+      fullname,
       email,
       password: hashedPassword,
     });
@@ -35,7 +37,7 @@ export const signup = async (req, res) => {
 
       res.status(201).json({
         _id: newUser._id,
-        fullName: newUser.fullName,
+        fullname: newUser.fullName,
         email: newUser.email,
         profilePic: newUser.profilePic,
       });
@@ -86,22 +88,24 @@ export const logout = (req, res) => {
   }
 };
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const uploadToCloudinary = async (profilePic) => {
   let retries = 3;
   while (retries > 0) {
     try {
       const uploadResult = await cloudinary.uploader.upload(profilePic, {
         folder: "ChatMates",
-        use_filename: true,
-        unique_filename: false,
-        timeout: 60000, // 1 minute timeout
+        timeout: 60000, // Ensure this is properly handled
       });
       return uploadResult;
     } catch (cloudinaryError) {
-      console.error("Cloudinary upload failed, retrying...", cloudinaryError);
+      console.error("Cloudinary upload failed:", cloudinaryError);
       retries -= 1;
-      if (retries === 0) {
-        throw cloudinaryError; // If all retries fail, throw error
+      if (retries > 0) {
+        await delay(2000); // 2-second delay
+      } else {
+        throw cloudinaryError; // Throw after all retries
       }
     }
   }

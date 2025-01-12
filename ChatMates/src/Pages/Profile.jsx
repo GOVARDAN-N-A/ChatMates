@@ -51,7 +51,7 @@ const Profile = () => {
         email: formData.email,
         profilePic: selectedImage || authUser.profilePic,
       });
-      toast.success("Profile updated successfully");
+      // toast.success("Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
@@ -70,7 +70,7 @@ const Profile = () => {
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
               <img
-                src={selectedImage || authUser.profilePic || "https://default-avatar.png"}
+                src={selectedImage || authUser.profilePic || "https://img.freepik.com/premium-vector/child-avatar-illustration-happy-boy-avatar-cartoon-user-portrait-user-profile-icon_118339-4378.jpg?w=1380"}
                 alt="Profile Picture"
                 className="w-32 h-32 rounded-full object-cover"
               />

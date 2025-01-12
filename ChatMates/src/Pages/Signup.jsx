@@ -58,6 +58,8 @@ const Signup = () => {
     const isFormValid = await validateForm(formData); // Ensure async validation
 
     if (isFormValid) {
+      console.log("Form data:", formData);
+      
         await signup(formData); // Call the `signup` function
     }
 };
