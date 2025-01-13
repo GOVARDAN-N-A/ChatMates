@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios.lib.js";
 import toast from "react-hot-toast";
+import { io } from "socket.io-client";
+
+const SERVER_URL = import.meta.env.MODE === "development" ? "http://localhost:5001/api" : "/api"
+
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -8,6 +12,8 @@ export const useAuthStore = create((set, get) => ({
   isSigningUp: false,
   isLoggingIn: false,
   isUpdatingProfile: false,
+  onlineUsers: [],
+  socket:null,
 
   // Check authentication status
   checkAuth: async () => {
@@ -105,13 +111,32 @@ export const useAuthStore = create((set, get) => ({
 
   // Connect to socket (implementation here)
   connectSocket: () => {
-    // If you are using a socket server (e.g., Socket.io), you can implement the socket connection logic here
-    console.log("Connecting to socket...");
-  },
+    const { authUser } = get();
+    if (!authUser || get().socket?.connected) return;
 
-  // Disconnect from socket (implementation here)
+    const socket = io(SERVER_URL, {
+      query: {
+        userId: authUser._id,
+      },
+      
+    });
+    socket.connect();
+
+    set({ socket: socket });
+
+    socket.on("getOnlineUsers", (userIds) => {
+      set({ onlineUsers: userIds });
+      console.log("Online users from socket :", userIds);
+      
+    });
+
+    socket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+    });
+    console.log("Socket connected", socket.id);
+    
+  },
   disconnectSocket: () => {
-    // If you are using a socket server (e.g., Socket.io), implement disconnection logic here
-    console.log("Disconnecting from socket...");
+    if (get().socket?.connected) get().socket.disconnect();
   },
 }));

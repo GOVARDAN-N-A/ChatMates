@@ -13,14 +13,18 @@ const ChatContainer = () => {
     getMessages,
     isMessagesLoading,
     selectedUser,
+    subscribeToMessages,
+    unsubscribeFromMessages,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
 
-  // Always call useEffect unconditionally
   useEffect(() => {
     getMessages(selectedUser._id);
-  }, [selectedUser._id, getMessages]);
+    subscribeToMessages();
+
+    return () => unsubscribeFromMessages();
+  }, [selectedUser._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);
 
   useEffect(() => {
     if (messageEndRef.current && messages) {
@@ -28,7 +32,6 @@ const ChatContainer = () => {
     }
   }, [messages]);
 
-  // This useEffect should be unconditionally called and only log messages.image if messages exist
   useEffect(() => {
     if (messages) {
       messages.forEach((message) => {
@@ -78,15 +81,16 @@ const ChatContainer = () => {
               </time>
             </div>
             <div className="chat-bubble flex flex-col">
-              <img src="" alt="" />
+              {/* Render the image only if `message.image` exists */}
               {message.image && (
                 <img
-                  src={message.image} // Display Base64 image
+                  src={message.image}
                   alt="Attachment"
                   className="sm:max-w-[200px] rounded-md mb-2"
                 />
               )}
 
+              {/* Render the message text only if it exists */}
               {message.text && <p>{message.text}</p>}
             </div>
           </div>
@@ -98,4 +102,4 @@ const ChatContainer = () => {
   );
 };
 
-export default ChatContainer;
+export default ChatContainer

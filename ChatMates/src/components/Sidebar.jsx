@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/useAuthStore';
 
 const Sidebar = () => {
     const { getUsers, users, selectedUser, setSelectedUser, isUserLoading } = useChatStore();
-    const { onlineusers = [] } = useAuthStore();
+    const { onlineUsers = [] } = useAuthStore();
   
     useEffect(() => {
       getUsers(); // Fetch users on component mount
@@ -15,10 +15,10 @@ const Sidebar = () => {
     if (isUserLoading) return <SidebarSkeleton />;
   
     console.log("Users fetched from useChatStore:", users);
-    console.log("Online users fetched from useAuthStore:", onlineusers);
+    console.log("Online users fetched from useAuthStore:", onlineUsers);
   
     // Normalize online user IDs to strings for comparison
-    const normalizedOnlineUsers = onlineusers.map((id) => id.toString());
+    const normalizedOnlineUsers = onlineUsers.map((id) => id.toString());
     console.log("Normalized online user IDs:", normalizedOnlineUsers);
   
     return (

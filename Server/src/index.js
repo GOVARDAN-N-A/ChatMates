@@ -1,40 +1,57 @@
 import express from "express";
-import authRoutes from "./routes/auth.route.js";
 import dotenv from "dotenv";
-import { connectDB } from "./lib/db.lib.js";
 import cookieParser from "cookie-parser";
-import messageRoutes from "./routes/message.route.js";
 import cors from "cors";
+
+import path from "path";
+
+import { connectDB } from "./lib/db.lib.js";
+
+import authRoutes from "./routes/auth.route.js";
+import messageRoutes from "./routes/message.route.js";
+import { app, server } from "./lib/socket.lib.js";
+import bodyParser from "body-parser";
 
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 5001;
 
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+const PORT = process.env.PORT;
+const __dirname = path.resolve();
 
-// Middleware
-app.use(cookieParser());
-app.use(cors({
-    origin: "http://localhost:5173",
-    credentials: true
-}));
 app.use(express.json());
+app.use(cookieParser());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-// Error Handling Middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: "Something went wrong!" });
-});
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`Server is running on port: ${PORT}`);
-    connectDB();
+
+app.use(bodyParser.urlencoded({
+    parameterLimit: 100000,
+    limit: '50mb',
+    extended: true
+  }));
+
+
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+  });
+}
+
+server.listen(PORT, () => {
+  console.log("server is running on PORT:" + PORT);
+  connectDB();
 });

@@ -4,5 +4,18 @@
     "cors": "^2.8.5",
     "lucide-react": "^0.469.0",
     "zustand": "^5.0.3"
-  }
+  },
+  "name": "chat-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "build": "npm install --prefix Server && npm install --prefix ChatMates && npm run build --prefix ChatMates",
+    "dev": "",
+    "start": "npm start --prefix Server"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }
