@@ -34,7 +34,7 @@ export const getMessages = async (req, res) => {
       ],
     });
     
-    console.log("messages:", messages);
+    // console.log("messages:", messages);
     
     res.status(200).json(messages);
   } catch (error) {
