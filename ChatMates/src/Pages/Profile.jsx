@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Camera, User, Mail } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import toast from "react-hot-toast";
+import Compressor from "compressorjs";
 
 const Profile = () => {
   const { authUser, isUpdatingProfile, updateProfile } = useAuthStore();
@@ -10,51 +11,71 @@ const Profile = () => {
     email: authUser?.email || "",
   });
   const [selectedImage, setSelectedImage] = useState(null);
+  const [compressedFile, setCompressedFile] = useState(null);
+
+  // Cleanup object URLs
+  useEffect(() => {
+    return () => {
+      if (selectedImage) URL.revokeObjectURL(selectedImage);
+    };
+  }, [selectedImage]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error("File size should not exceed 5MB.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = async () => {
-      const base64Image = reader.result;
-
-      if (!base64Image.startsWith("data:image")) {
-        toast.error("Please upload a valid image file.");
-        return;
-      }
-
-      setSelectedImage(base64Image);
-
-      try {
-        await updateProfile({ profilePic: base64Image });
-      } catch (error) {
-        console.error("Error updating profile image:", error);
-      }
-    };
+    // Compress the image
+    new Compressor(file, {
+      quality: 0.8,
+      success: (compressed) => {
+        setCompressedFile(compressed); // Save the compressed file
+        const objectURL = URL.createObjectURL(compressed);
+        setSelectedImage(objectURL); // Update the preview
+      },
+      error: (err) => {
+        console.error("Compression error:", err);
+        toast.error("Failed to compress the image. Please try again.");
+      },
+    });
   };
 
   const handleSubmit = async () => {
     try {
+      // Convert compressed file to base64 if needed
+      let base64Image = null;
+      if (compressedFile) {
+        base64Image = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(compressedFile);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = (err) => reject(err);
+          
+        });
+      }
+      console.log("base64Image", base64Image);
+      
+
       await updateProfile({
         fullname: formData.fullname,
         email: formData.email,
-        profilePic: selectedImage || authUser.profilePic,
+        profilePic: base64Image || authUser.profilePic, // Use the new image or fallback to the old one
+        
       });
-      // toast.success("Profile updated successfully");
+      
+      // toast.success("Profile updated successfully!");
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Failed to update profile");
+      toast.error("Failed to update profile. Please try again.");
     }
   };
 
@@ -70,7 +91,11 @@ const Profile = () => {
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
               <img
-                src={selectedImage || authUser.profilePic || "https://img.freepik.com/premium-vector/child-avatar-illustration-happy-boy-avatar-cartoon-user-portrait-user-profile-icon_118339-4378.jpg?w=1380"}
+                src={
+                  selectedImage ||
+                  authUser.profilePic ||
+                  "https://img.freepik.com/premium-vector/child-avatar-illustration-happy-boy-avatar-cartoon-user-portrait-user-profile-icon_118339-4378.jpg?w=1380"
+                }
                 alt="Profile Picture"
                 className="w-32 h-32 rounded-full object-cover"
               />
